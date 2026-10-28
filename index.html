@@ -130,17 +130,15 @@
             }
         }
 
-        // Interacción del ratón
-        canvas.addEventListener('mousemove', (e) => {
+// Función centralizada para detectar la posición (sirve para PC y móviles)
+        function interactuar(clientX, clientY) {
             const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
 
-            // Revisamos los círculos desde el último al primero (los dibujados encima)
             for (let i = circles.length - 1; i >= 0; i--) {
                 let c = circles[i];
-                if (c.contains(mouseX, mouseY) && c.size > MIN_SIZE) {
-                    // Si el ratón pasa por encima, dividimos el círculo en 4
+                if (c.contains(x, y) && c.size > MIN_SIZE) {
                     circles.splice(i, 1);
                     const newSize = c.size / 2;
                     
@@ -149,7 +147,6 @@
                     const blColor = getAverageColor(c.x, c.y + newSize, newSize, newSize);
                     const brColor = getAverageColor(c.x + newSize, c.y + newSize, newSize, newSize);
 
-                    // Top-Left, Top-Right, Bottom-Left, Bottom-Right
                     circles.push(new Circle(c.x, c.y, newSize, tlColor));
                     circles.push(new Circle(c.x + newSize, c.y, newSize, trColor));
                     circles.push(new Circle(c.x, c.y + newSize, newSize, blColor));
@@ -157,7 +154,23 @@
                     break; 
                 }
             }
+        }
+
+        // 1. Interacción con ratón (PC)
+        canvas.addEventListener('mousemove', (e) => {
+            interactuar(e.clientX, e.clientY);
         });
+
+        // 2. Interacción al deslizar el dedo (Móvil/Tablet)
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault(); // Evita que la pantalla haga scroll al arrastrar el dedo
+            interactuar(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+
+        // 3. Interacción con un toque rápido (Móvil/Tablet)
+        canvas.addEventListener('touchstart', (e) => {
+            interactuar(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
 
         // Bucle de animación para el canvas
         function animate() {
